@@ -1,8 +1,8 @@
 from abc import ABC, abstractmethod
-from math import cos, pi, sin
+from math import cos, pi, sin, radians
 from typing import List
 
-from PyQt5.QtCore import QPointF, Qt, QLineF
+from PyQt5.QtCore import QPointF, Qt
 from PyQt5.QtGui import QPainter, QBrush, QPen, QPainterPath
 
 
@@ -12,12 +12,10 @@ class Drawable(ABC):
     def draw(self, painter: QPainter):
         pass
 
-    # @abstractmethod
-    # def rotate(self, angle_in_degrees: float):
-    #     pass
+    @abstractmethod
+    def rotate(self, angle_in_degrees: float):
+        pass
 
-
-# Создать компоновщика
 
 class Figure(Drawable):
     def __init__(self, center: QPointF = QPointF(0, 0),
@@ -65,6 +63,10 @@ class Figure(Drawable):
         painter.setPen(QPen(QBrush(self.__border_color), self.__border_thickness))
         painter.setBrush(QBrush(self.__inner_color))
 
+    @abstractmethod
+    def rotate(self, angle_in_degrees: float):
+        pass
+
 
 class Cycle(Figure):
     def __init__(self, radius: float = 0, *args, **kwargs):
@@ -82,6 +84,9 @@ class Cycle(Figure):
     def draw(self, painter: QPainter):
         super(Cycle, self).draw(painter)
         painter.drawEllipse(self.center, self.radius, self.radius)
+
+    def rotate(self, angle_in_degrees: float):
+        pass
 
 
 class RegularPolygon(Figure):
@@ -123,12 +128,22 @@ class RegularPolygon(Figure):
         path.moveTo(self.__points[0])
         for i in range(1, len(self.__points)):
             path.lineTo(self.__points[i])
-            painter.drawLine(self.__points[i-1], self.__points[i])
+            painter.drawLine(self.__points[i - 1], self.__points[i])
 
         painter.drawLine(self.__points[len(self.__points) - 1], self.__points[0])
         path.lineTo(self.__points[0])
         painter.fillPath(path, QBrush(self.inner_color))
 
+    def rotate(self, angle_in_degrees: float):
+        for point in self.__points:
+            x_diff = point.x() - self.center.x()
+            y_diff = point.y() - self.center.y()
+            cos_fi = cos(radians(angle_in_degrees))
+            sin_fi = sin(radians(angle_in_degrees))
+
+            point.setX(self.center.x() + x_diff * cos_fi - y_diff * sin_fi)
+
+            point.setY(self.center.y() + x_diff * sin_fi + y_diff * cos_fi)
 
     @Figure.center.setter
     def center(self, value: QPointF):
