@@ -1,5 +1,5 @@
 from PyQt5.QtCore import QRect, Qt
-from PyQt5.QtGui import QPainter, QBrush, QPen
+from PyQt5.QtGui import QPainter, QBrush, QPen, QWheelEvent
 from PyQt5.QtWidgets import QWidget, QApplication
 
 from figures import Cycle, RegularPolygon
@@ -9,14 +9,15 @@ class PictureWidget(QWidget):
     MARGIN = 10  # размер отступа внутри окна в пикселях
     MAIN_PEN_THICKNESS = 3  # Толщина основного пера
     SLIM_PEN_THICKNESS = 1  # Толщина тонкого пера
-    ANGLES_COUNT = 10  # Количество углов вписанных многоугольгиков
+    ANGLES_COUNT = 10  # Количество углов вписанных многоугольников
+    ROTATION_ANGLE = 5  # Угол поворота картинки за одно событие
 
     def __init__(self, width: int, height: int, title: str):
         QWidget.__init__(self)
-
         self.resize(width, height)
         self.setWindowTitle(title)
         self.__init_figures()
+        self.__rotation = 0
 
     def __init_figures(self):
         self.__cycle = Cycle(inner_color=Qt.red)
@@ -42,8 +43,17 @@ class PictureWidget(QWidget):
 
         painter.end()
 
-    def draw(self, painter: QPainter):
+    def wheelEvent(self, event: QWheelEvent) -> None:
+        super().wheelEvent(event)
 
+        self.__rotation += self.ROTATION_ANGLE
+
+        if self.__rotation >= 360:
+            self.__rotation %= 360
+
+        self.repaint()
+
+    def draw(self, painter: QPainter):
         for figure in self.__figures:
             figure.draw(painter)
 
@@ -56,6 +66,9 @@ class PictureWidget(QWidget):
 
         self.__big_polygon.center_distance = self.__cycle.radius = min(draw_rect.height() / 2, draw_rect.width() / 2)
         self.__small_polygon.center_distance = self.__big_polygon.center_distance / 4
+
+        for figure in self.__figures:
+            figure.rotate(self.__rotation)
 
     def __draw_lines_between_polygons(self, painter: QPainter):
         painter.setPen(QPen(QBrush(Qt.black), self.SLIM_PEN_THICKNESS))
